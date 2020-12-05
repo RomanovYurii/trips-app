@@ -6,6 +6,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="translations.js"></script>
     <script src="panel.js"></script>
     <style>
         table {
@@ -36,34 +37,43 @@
             cursor: pointer;
         }
 
-        .active {
+        th.active {
             font-weight: bold;
             text-decoration: underline;
         }
-        .active::after {
+
+        th.active::after {
             content: "↓";
         }
     </style>
 </head>
 <body>
 
-<a href="#"><h3 onclick="toggleTable('model')">Models</h3></a>
+<a href="index.html"><h2>< Повернутися на головну сторінку</h2></a>
+
+<h2>Перегляд, зміна, видалення та додавання нових даних до БД</h2>
+
+<a href="#"><h3 onclick="toggleTable('model')">Моделі автобусів</h3></a>
 <table id="model" style="display: none;"></table>
 
-<a href="#"><h3 onclick="toggleTable('ticket_info')">Tickets</h3></a>
+<a href="#"><h3 onclick="toggleTable('ticket_info')">Інформація про квитки</h3></a>
 <table id="ticket_info" style="display: none;"></table>
 
-<a href="#"><h3 onclick="toggleTable('bus_info')">Buses</h3></a>
+<a href="#"><h3 onclick="toggleTable('bus_info')">Інформація про автобуси</h3></a>
 <table id="bus_info" style="display: none;"></table>
 
-<a href="#"><h3 onclick="toggleTable('route')">Routes</h3></a>
+<a href="#"><h3 onclick="toggleTable('route')">Рейси</h3></a>
 <table id="route" style="display: none;"></table>
 
-<a href="#"><h3 onclick="toggleTable('route_info')">Routes Info</h3></a>
+<a href="#"><h3 onclick="toggleTable('route_info')">Інформація про рейси</h3></a>
 <table id="route_info" style="display: none;"></table>
 
-<a href="#"><h3 onclick="toggleTable('refunds')">Refunds</h3></a>
+<a href="#"><h3 onclick="toggleTable('refunds')">Інформація про відшкодовані квитки</h3></a>
 <table id="refunds" style="display: none;"></table>
+
+<h2>Спеціальні дії з даними</h2>
+<h3>Продати квиток на обраний рейс</h3>
+<table id="sell-ticket"></table>
 
 </body>
 </html>

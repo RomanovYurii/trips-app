@@ -5,6 +5,7 @@
     <title>Trips</title>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="translations.js"></script>
     <script src="index.js"></script>
     <style>
         table {
@@ -29,16 +30,16 @@
     </style>
 </head>
 <body>
-<h2>Name of the app</h2>
+<h2>Інформаційна система обліку попереднього продажу квитків на автотранспорт</h2>
 
-<a href="./panel.html"><h3>Actions panel</h3></a>
+<a href="./panel.html"><h3>Панель управління</h3></a>
 
 <h3 id="avg">Визначити середню вартість квитка по всім рейсам: </h3>
 <h3>Для вибраного пункту призначення вибрати рейси на наступний день</h3>
 
-<label for="input-next-day">Destination:</label>
+<label for="input-next-day">Пункт прибуття:</label>
 <input type="text" id="input-next-day" value="Cherkassy" placeholder="City name">
-<button onclick="onSearchNextDay()">Search</button>
+<button onclick="onSearchNextDay()">Шукати</button>
 
 <table id="table-next-day"></table>
 

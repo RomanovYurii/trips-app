@@ -1,7 +1,9 @@
 const {map, keys, isEmpty} = _;
+const protocol = 'http';
+const address = 'localhost';
 const port = 5000;
 
-const api = async (hook, data = {}) => await $.get(`http://localhost:${port}/${hook}`, data);
+const api = async (hook, data = {}) => await $.get(`${protocol}://${address}:${port}/${hook}`, data);
 
 const onAdd = async (args) => {
   const {tableId} = args;
@@ -71,7 +73,7 @@ const initializeTable = (args) => {
           uniqueItemKey,
           orderBy: item
         });
-        return `<th class="${item === orderBy ? 'active' : ''}" onclick='initializeTable(${options})'>${item}</th>`;
+        return `<th class="${item === orderBy ? 'active' : ''}" onclick='initializeTable(${options})'>${translations[item] || item}</th>`;
       }
       const generateTableElement = (item) => {
         let itemString = '';
@@ -101,8 +103,8 @@ const initializeTable = (args) => {
           itemString += `<td><input ${key === uniqueItemKey && 'disabled'} type="${type}" id="input-${key}-${tableId}-${item[uniqueItemKey]}" value="${value}"></td>`
         });
 
-        const saveButton = `<button onclick='onEdit(${JSON.stringify(actionsProperties)})'>Save</button>`;
-        const deleteButton = `<button onclick='onDelete(${JSON.stringify(actionsProperties)})'>X</button>`;
+        const saveButton = `<button onclick='onEdit(${JSON.stringify(actionsProperties)})'>Зберегти</button>`;
+        const deleteButton = `<button onclick='onDelete(${JSON.stringify(actionsProperties)})'>Х</button>`;
 
         const actions = `<td>${saveButton}${deleteButton}</td>`
 
@@ -113,10 +115,10 @@ const initializeTable = (args) => {
         const actionsProperties = {tableId};
 
         map(keys(item), key => {
-          itemString += `<td><input id="input-${key}-${tableId}_empty" placeholder="${key}"></td>`
+          itemString += `<td><input id="input-${key}-${tableId}_empty" placeholder="${translations[key] || key}"></td>`
         });
 
-        const addButton = `<button onclick='onAdd(${JSON.stringify(actionsProperties)})'>Add new</button>`;
+        const addButton = `<button onclick='onAdd(${JSON.stringify(actionsProperties)})'>Додати новий елемент</button>`;
         const actions = `<td>${addButton}</td>`
         return itemString + actions;
       }
@@ -127,7 +129,7 @@ const initializeTable = (args) => {
       });
       body.push(generateEmptyTableItem(res[0]))
 
-      head = `<thead><tr>${head.join()}<th>Actions</th></tr></thead>`;
+      head = `<thead><tr>${head.join()}<th>Дії з записами</th></tr></thead>`;
       body = `<tbody>${body.join()}</tbody>`;
 
       $(`#${tableId}`).html(head + body)
@@ -139,25 +141,117 @@ const tables = [
   {
     tableId: 'model',
     uniqueItemKey: 'bus_number',
-  }, {
+  },
+  {
     tableId: 'ticket_info',
     uniqueItemKey: 'ticket_id',
-  }, {
+  },
+  {
     tableId: 'route',
     uniqueItemKey: 'route_id',
-  }, {
+  },
+  {
     tableId: 'bus_info',
     uniqueItemKey: 'bus_id',
-  }, {
+  },
+  {
     tableId: 'route_info',
     uniqueItemKey: 'route_info_id',
-  }, {
+  },
+  {
     tableId: 'refunds',
     uniqueItemKey: 'refund_id',
   }
 ]
-
+const updateTables = () => map(tables, table => initializeTable(table));
 $(() => {
-  map(tables, table => initializeTable(table));
+  updateTables();
+  updateSellTable();
 })
 
+let availableRoutes, selectedRoute;
+
+const updateSellTable = async () => {
+  if (isEmpty(availableRoutes) || isEmpty(selectedRoute)) {
+    const res = await api('getAvailableRoutes');
+
+    if (isEmpty(availableRoutes))
+      availableRoutes = res.sort((a, b) => a.route_id - b.route_id);
+
+    if (!isEmpty(selectedRoute) && !!availableRoutes.find(route => route.route_id === selectedRoute.route_id)) {
+      selectedRoute = {...availableRoutes.find(route => route.route_id === selectedRoute.route_id)};
+    } else {
+      selectedRoute = {...availableRoutes[0]};
+    }
+  }
+
+  const table = $('#sell-ticket');
+  let buffer = [];
+  map(keys(selectedRoute), key => buffer.push(`<th>${translations[key] || key}</th>`))
+  buffer.push(`<th>Знижка (%)</th><th></th>`)
+  const head = `<thead><tr>${buffer.join()}</tr></thead>`;
+
+  buffer = [];
+  const subBuffer = [];
+  map(availableRoutes, route => {
+    const selected = route.route_id === selectedRoute.route_id ? 'selected' : '';
+    subBuffer.push(`<option ${selected} value="${route.route_id}">${route.route_id}</option>`)
+  })
+  buffer.push(`<td><select id="available-routes-select">${subBuffer.join()}</select></td>`)
+  map(keys(selectedRoute), key => {
+    if (key !== 'route_id') {
+      let value = selectedRoute[key];
+      if (key === 'date_of_route') {
+        value = moment(value).format('DD.MM.YYYY');
+      }
+      buffer.push(`<td>${value}</td>`)
+    }
+  })
+  buffer.push(`<td><input id="reduced-price" placeholder="Знижка" type="number"></td>`)
+  buffer.push(`<td><button onclick="sellTicket()">Продати квиток</button></td>`)
+  const body = `<tbody><tr>${buffer.join()}</tr></tbody>`;
+  table.html(head + body);
+  $('#available-routes-select').on('change', (e) => {
+    for (let route of availableRoutes) {
+      if (route.route_id.toString() === e.target.value) {
+        selectedRoute = route;
+        updateSellTable();
+        break;
+      }
+    }
+  })
+}
+
+const sellTicket = () => {
+  const privilege = $('#reduced-price').val();
+
+  const {route_id, price, free_number_of_seats} = selectedRoute;
+
+  const addTicketData = {
+    tableId: 'ticket_info',
+    fields: {
+      date_of_sale: moment().format('DD/MM/YYYY'),
+      route_id: route_id,
+      privilege: (privilege || 0) + '%',
+      sum_for_ticket: price - (price * privilege * 0.01) || price,
+    }
+  }
+
+  const editRouteData = {
+    tableId: 'route',
+    uniqueItemKey: 'route_id',
+    uniqueItemValue: route_id,
+    fields: {
+      free_number_of_seats: free_number_of_seats - 1,
+    }
+  }
+
+  availableRoutes = null;
+  Promise.all([
+    api('addItem', addTicketData),
+    api('editItem', editRouteData),
+  ]).then(() => {
+    updateTables();
+    updateSellTable();
+  })
+}

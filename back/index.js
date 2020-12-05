@@ -106,7 +106,6 @@ app.get('/addItem', async (req, res) => {
     .catch((error) => res.send({status: 'Error', error}))
 })
 
-
 // Tasks
 app.get('/getAveragePrice', async (req, res) => {
   res.send(await getAveragePrice())
@@ -124,6 +123,24 @@ app.get('/getNoTicketCases', async (req, res) => {
 })
 app.get('/getBusesSchedule', async (req, res) => {
   res.send(await busesSchedule())
+})
+
+// Extra
+app.get('/getAvailableRoutes', async (req, res) => {
+  pool.query(`
+    SELECT 
+      route.route_id, 
+      route.date_of_route,
+      route.time_of_route,
+      route.price, 
+      route.free_number_of_seats,
+      route_info.point_of_arrival
+    FROM route
+    JOIN route_info on route.route_info_id=route_info.route_info_id
+    WHERE free_number_of_seats != 0
+  `)
+    .then((dbRes) => res.send(dbRes.rows))
+    .catch((error) => res.send({error}))
 })
 
 const port = 5000

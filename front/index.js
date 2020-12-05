@@ -1,11 +1,15 @@
-const {isEmpty} = _;
+const {isEmpty, map} = _;
+
+const protocol = 'http';
+const address = 'localhost';
 const port = 5000;
 
-const nothingWasFoundString = 'Nothing was found';
+const nothingWasFoundString = 'Не знайдено записів на поданий запит';
 
-const api = async (hook, data = {}) => await $.get(`http://localhost:${port}/${hook}`, data);
+const api = async (hook, data = {}) => await $.get(`${protocol}://${address}:${port}/${hook}`, data);
 
-const injectParsedRows = ({headers, orderedKeys, items, destinationId}) => {
+const injectParsedRows = ({orderedKeys, items, destinationId}) => {
+  const headers = map(orderedKeys, key => translations[key])
   if (!isEmpty(items)) {
     const rows = [];
     items.map(item => {
@@ -35,10 +39,6 @@ api('getAveragePrice').then(res => {
 api('getMinPrices').then(res => {
   injectParsedRows({
     destinationId: '#table-min',
-    headers: [
-      'Destination',
-      'Price'
-    ],
     orderedKeys: [
       'point_of_arrival',
       'min'
@@ -50,11 +50,6 @@ api('getMinPrices').then(res => {
 api('getNoTicketCases').then(res => {
   injectParsedRows({
     destinationId: '#table-no-ticket',
-    headers: [
-      'Route ID',
-      'Free number of seats',
-      'Number of seats',
-    ],
     orderedKeys: [
       'route_id',
       'free_number_of_seats',
@@ -70,15 +65,6 @@ const onSearchNextDay = () => {
     api('getNextDayRoutes', {destination}).then(res => {
       injectParsedRows({
         destinationId: '#table-next-day',
-        headers: [
-          'Route ID',
-          'Time of route',
-          'Price',
-          'Free number of seats',
-          'Point of arrival',
-          'Bus brand',
-          'Bus number',
-        ],
         orderedKeys: [
           'route_id',
           'time_of_route',
@@ -97,12 +83,6 @@ const onSearchNextDay = () => {
 api('getBusesSchedule').then(res => {
   injectParsedRows({
     destinationId: '#table-buses-schedule',
-    headers: [
-      'Point of arrival',
-      'Date of route',
-      'Duration of route',
-      'Distance',
-    ],
     orderedKeys: [
       'point_of_arrival',
       'date_of_route',
