@@ -1,9 +1,15 @@
+const {get} = $;
 const {map, keys, isEmpty} = _;
 const protocol = 'http';
 const address = 'localhost';
 const port = 5000;
 
-const api = async (hook, data = {}) => await $.get(`${protocol}://${address}:${port}/${hook}`, data);
+const api = async (hook, data = {}) => await get(`${protocol}://${address}:${port}/${hook}`, data)
+  .then(res => {
+    if (res.status !== 'OK' && res.error)
+      alert(`Error!\n${res.error.detail || JSON.stringify(res.error, null, 2)}`);
+    else return res;
+  })
 
 const onAdd = async (args) => {
   const {tableId} = args;
@@ -20,7 +26,6 @@ const onAdd = async (args) => {
 
   api('addItem', {...args, fields}).then(res => {
     if (res.status === 'OK') initializeTable(args);
-    else alert(`Error!\n${res.error.detail || JSON.stringify(res.error, null, 2)}`);
   })
 };
 const onEdit = async (args) => {
@@ -45,13 +50,11 @@ const onEdit = async (args) => {
 
   api('editItem', {...args, fields}).then(res => {
     if (res.status === 'OK') initializeTable(args);
-    else alert(`Error!\n${res.error.detail || JSON.stringify(res.error, null, 2)}`);
   })
 };
 const onDelete = async (args) => {
   api('deleteItem', args).then(res => {
     if (res.status === 'OK') initializeTable(args);
-    else alert(`Error!\n${res.error.detail || JSON.stringify(res.error, null, 2)}`);
   })
 };
 
@@ -61,7 +64,6 @@ const toggleTable = (tableId) => {
 const initializeTable = (args) => {
   const {tableId, uniqueItemKey} = args;
   let {orderBy} = args;
-  if (!orderBy) orderBy = uniqueItemKey;
   api('getRows', {tableId, orderBy})
     .then(res => {
       let head = [];
@@ -110,7 +112,7 @@ const initializeTable = (args) => {
 
         return `<tr>${itemString + actions}</tr>`;
       };
-      const generateEmptyTableItem = (item) => {
+      const generateEmptyTableItem = (item = res[0]) => {
         let itemString = '';
         const actionsProperties = {tableId};
 
@@ -120,7 +122,7 @@ const initializeTable = (args) => {
 
         const addButton = `<button onclick='onAdd(${JSON.stringify(actionsProperties)})'>Додати новий елемент</button>`;
         const actions = `<td>${addButton}</td>`
-        return itemString + actions;
+        return `<tr>${itemString + actions}</tr>`;
       }
 
       map(keys(res[0]), key => head.push(generateHeadElement(key)));
@@ -164,10 +166,6 @@ const tables = [
   }
 ]
 const updateTables = () => map(tables, table => initializeTable(table));
-$(() => {
-  updateTables();
-  updateSellTable();
-})
 
 let availableRoutes, selectedRoute;
 
@@ -221,8 +219,7 @@ const updateSellTable = async () => {
     }
   })
 }
-
-const sellTicket = () => {
+const sellTicket = async () => {
   const privilege = $('#reduced-price').val();
 
   const {route_id, price, free_number_of_seats} = selectedRoute;
@@ -230,7 +227,7 @@ const sellTicket = () => {
   const addTicketData = {
     tableId: 'ticket_info',
     fields: {
-      date_of_sale: moment().format('DD/MM/YYYY'),
+      date_of_sale: moment().format('YYYY-MM-DD'),
       route_id: route_id,
       privilege: (privilege || 0) + '%',
       sum_for_ticket: price - (price * privilege * 0.01) || price,
@@ -247,11 +244,112 @@ const sellTicket = () => {
   }
 
   availableRoutes = null;
-  Promise.all([
-    api('addItem', addTicketData),
-    api('editItem', editRouteData),
-  ]).then(() => {
-    updateTables();
-    updateSellTable();
+  await api('addItem', addTicketData);
+  await api('editItem', editRouteData);
+
+  updateTables();
+  updateSellTable();
+}
+
+let availableTickets, selectedTicket;
+const updateReturnTable = async () => {
+  if (isEmpty(availableTickets) || isEmpty(selectedTicket)) {
+    const res = await api('getAvailableTickets');
+
+    if (isEmpty(availableTickets))
+      availableTickets = res.sort((a, b) => a.ticket_id - b.ticket_id);
+
+    if (!isEmpty(selectedTicket) && !!availableTickets.find(ticket => ticket.ticket_id === selectedTicket.ticket_id)) {
+      selectedTicket = {...availableTickets.find(ticket => ticket.ticket_id === selectedTicket.ticket_id)};
+    } else {
+      selectedTicket = {...availableTickets[0]};
+    }
+  }
+
+  const table = $('#return-ticket');
+  let buffer = [];
+  map(keys(selectedTicket), key => buffer.push(`<th>${translations[key] || key}</th>`))
+  buffer.push(`<th></th>`)
+  const head = `<thead><tr>${buffer.join()}</tr></thead>`;
+
+  buffer = [];
+  const subBuffer = [];
+  map(availableTickets, ticket => {
+    const selected = ticket.ticket_id === selectedTicket.ticket_id ? 'selected' : '';
+    const date = moment(ticket.date_of_sale).format('DD.MM.YYYY');
+    subBuffer.push(`<option ${selected} value="${ticket.ticket_id}">${ticket.ticket_id}: ${date}, ${ticket.sum_for_ticket} UAH</option>`)
   })
+  buffer.push(`<td><select id="available-tickets-select">${subBuffer.join()}</select></td>`)
+  map(keys(selectedTicket), key => {
+    if (key !== 'ticket_id') {
+      let value = selectedTicket[key];
+      if (key === 'date_of_sale') value = moment(value).format('DD.MM.YYYY');
+      buffer.push(`<td>${value}</td>`)
+    }
+  })
+  buffer.push(`<td><button onclick="returnTicket()">Повернути квиток</button></td>`)
+  const body = `<tbody><tr>${buffer.join()}</tr></tbody>`;
+  table.html(head + body);
+  $('#available-tickets-select').on('change', (e) => {
+    for (let ticket of availableTickets) {
+      if (ticket.ticket_id.toString() === e.target.value) {
+        selectedTicket = ticket;
+        updateReturnTable();
+        break;
+      }
+    }
+  })
+}
+const returnTicket = async () => {
+  const today = moment().format('YYYY-MM-DD');
+  const {ticket_id, sum_for_ticket, date_of_route, route_id, free_number_of_seats} = selectedTicket;
+  const isReturnedInAdvance = moment(today).isBefore(moment(date_of_route));
+
+  const addRefundData = {
+    tableId: 'refunds',
+    fields: {
+      ticket_id,
+      date_of_return: today,
+      sum_of_return: sum_for_ticket * (isReturnedInAdvance ? 0.6 : 0.1),
+      refund_id: ticket_id,
+    }
+  }
+
+  const editRouteData = {
+    tableId: 'route',
+    uniqueItemKey: 'route_id',
+    uniqueItemValue: route_id,
+    fields: {
+      free_number_of_seats: isReturnedInAdvance ? free_number_of_seats + 1 : free_number_of_seats,
+    }
+  }
+
+  availableRoutes = null;
+
+  await api('addItem', addRefundData);
+  await api('editItem', editRouteData);
+
+  updateTables();
+  updateReturnTable();
+}
+
+$(() => {
+  Promise.resolve()
+    .then(updateSellTable)
+    .then(updateReturnTable)
+    .then(updateTables)
+  ;
+})
+
+const resetDatabase = () => {
+  const confirm = window.confirm('Чи ти напевно хочеш перезавантажити БД?');
+  if (confirm) {
+    api('resetDatabase', {confirm}).then(() => {
+      Promise.resolve()
+        .then(updateSellTable)
+        .then(updateReturnTable)
+        .then(updateTables)
+      ;
+    })
+  }
 }

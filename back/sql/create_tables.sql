@@ -51,6 +51,6 @@ CREATE TABLE refunds(
 CREATE UNIQUE INDEX route_dx ON route (route_id);
 CREATE UNIQUE INDEX route_info_dx ON route_info (route_info_id);
 CREATE UNIQUE INDEX bus_info_dx ON bus_info (bus_id);
-CREATE UNIQUE INDEX return_dx ON return (refund_id);
+CREATE UNIQUE INDEX refunds_dx ON refunds (refund_id);
 CREATE UNIQUE INDEX ticket_dx ON ticket_info (ticket_id);
 

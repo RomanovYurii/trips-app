@@ -1,8 +1,11 @@
 const {Pool} = require('pg')
 const express = require('express')
 const cors = require('cors')
+const fs = require('fs');
 const app = express()
 
+const createTables = fs.readFileSync(__dirname + '/sql/create_tables.sql').toString();
+const mockTables = fs.readFileSync(__dirname + '/sql/mock_tables.sql').toString();
 const connectionString = "postgres://postgres:password@localhost/trips"
 const pool = new Pool({connectionString})
 
@@ -141,6 +144,43 @@ app.get('/getAvailableRoutes', async (req, res) => {
   `)
     .then((dbRes) => res.send(dbRes.rows))
     .catch((error) => res.send({error}))
+})
+app.get('/getAvailableTickets', async (req, res) => {
+  pool.query(`
+    select 
+      ticket_info.ticket_id,
+      ticket_info.sum_for_ticket,
+      route.date_of_route, 
+      route.route_id,
+      route.free_number_of_seats
+      from ticket_info
+    join route on route.route_id=ticket_info.route_id
+    left join refunds on refunds.refund_id=ticket_info.refund_id
+    where refunds.refund_id is null
+  `)
+    .then((dbRes) => res.send(dbRes.rows))
+    .catch((error) => res.send({error}))
+})
+
+app.get('/resetDatabase', async (req, res) => {
+  if (req.query.confirm) {
+    pool.query(`
+      DROP TABLE model CASCADE;
+      DROP TABLE bus_info CASCADE;
+      DROP TABLE route_info CASCADE;
+      DROP TABLE route CASCADE;
+      DROP TABLE ticket_info CASCADE;
+      DROP TABLE refunds CASCADE;
+      
+      ${createTables}
+      ${mockTables}
+    `)
+      .then(() => res.send({status: 'OK'}))
+      .catch(error => {
+        console.log(error);
+        res.send(error)
+      })
+  }
 })
 
 const port = 5000
