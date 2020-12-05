@@ -25,7 +25,7 @@ const nextDayRoutes = async (destination) => {
     from route 
     join route_info on route.route_info_id=route_info.route_info_id
     join bus_info on route.bus=bus_info.bus_id
-    where date_of_route=current_date-21 and route_info.point_of_arrival = '${destination}';
+    where date_of_route=current_date+1 and route_info.point_of_arrival = '${destination}';
   `)
 
   return dbRes.rows
