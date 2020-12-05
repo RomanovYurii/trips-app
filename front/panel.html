@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="panel.js"></script>
+    <style>
+        table {
+            margin: 1rem 0;
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+        }
+
+        th {
+            font-weight: bold;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 5px;
+        }
+
+        thead > tr, tbody > tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+
+        td > input {
+            width: max-content;
+        }
+
+        th:hover {
+            cursor: pointer;
+        }
+
+        .active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .active::after {
+            content: "↓";
+        }
+    </style>
+</head>
+<body>
+
+<a href="#"><h3 onclick="toggleTable('model')">Models</h3></a>
+<table id="model" style="display: none;"></table>
+
+<a href="#"><h3 onclick="toggleTable('ticket_info')">Tickets</h3></a>
+<table id="ticket_info" style="display: none;"></table>
+
+<a href="#"><h3 onclick="toggleTable('bus_info')">Buses</h3></a>
+<table id="bus_info" style="display: none;"></table>
+
+<a href="#"><h3 onclick="toggleTable('route')">Routes</h3></a>
+<table id="route" style="display: none;"></table>
+
+<a href="#"><h3 onclick="toggleTable('route_info')">Routes Info</h3></a>
+<table id="route_info" style="display: none;"></table>
+
+<a href="#"><h3 onclick="toggleTable('refunds')">Refunds</h3></a>
+<table id="refunds" style="display: none;"></table>
+
+</body>
+</html>
