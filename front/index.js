@@ -14,7 +14,11 @@ const injectParsedRows = ({orderedKeys, items, destinationId}) => {
     const rows = [];
     items.map(item => {
       const cells = [];
-      orderedKeys.map(key => cells.push(`<td>${item[key]}</td>`))
+      orderedKeys.map(key => {
+        let value = item[key];
+        if (key === 'date_of_route') value = moment(value).format('DD.MM.YYYY HH:mm');
+        cells.push(`<td>${value}</td>`)
+      })
       rows.push(`<tr>${cells.join('')}</tr>`)
     })
     $(destinationId).html(`

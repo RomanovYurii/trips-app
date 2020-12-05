@@ -6,7 +6,7 @@ const port = 5000;
 
 const api = async (hook, data = {}) => await get(`${protocol}://${address}:${port}/${hook}`, data)
   .then(res => {
-    if (res.status !== 'OK' && res.error)
+    if (res && res.status !== 'OK' && res.error)
       alert(`Error!\n${res.error.detail || JSON.stringify(res.error, null, 2)}`);
     else return res;
   })
@@ -168,7 +168,6 @@ const tables = [
 const updateTables = () => map(tables, table => initializeTable(table));
 
 let availableRoutes, selectedRoute;
-
 const updateSellTable = async () => {
   if (isEmpty(availableRoutes) || isEmpty(selectedRoute)) {
     const res = await api('getAvailableRoutes');
@@ -283,7 +282,7 @@ const updateReturnTable = async () => {
   map(keys(selectedTicket), key => {
     if (key !== 'ticket_id') {
       let value = selectedTicket[key];
-      if (key === 'date_of_sale') value = moment(value).format('DD.MM.YYYY');
+      if (key === 'date_of_route') value = moment(value).format('DD.MM.YYYY');
       buffer.push(`<td>${value}</td>`)
     }
   })

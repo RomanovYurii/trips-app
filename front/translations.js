@@ -4,7 +4,7 @@ const translations = {
   'number_of_seats': 'Загальна кількість місць',
   'point_of_arrival': 'Пункт прибуття',
   'min': 'Найнижча ціна',
-  'time_of_route': 'Час рейсу',
+  'time_of_route': 'Час відправлення',
   'price': 'Ціна',
   'brand': 'Марка автобусу',
   'bus_number': 'Номер автобусу',

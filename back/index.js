@@ -3,6 +3,7 @@ const cors = require('cors')
 const express = require('express')
 const {Pool} = require('pg')
 
+// postgres://USER_NAME:PASSWORD@localhost/TABLE
 const connectionString = "postgres://postgres:password@localhost/trips"
 const mockTables = fs.readFileSync(__dirname + '/sql/mock_tables.sql').toString();
 const createTables = fs.readFileSync(__dirname + '/sql/create_tables.sql').toString();
